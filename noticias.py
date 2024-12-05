@@ -30,17 +30,27 @@ def start_scraping():
             messagebox.showerror("Error", "La fecha de inicio no puede ser mayor que la fecha de fin.")
             return
 
-        # Crear instancia de Lostiempos y obtener las noticias
-        lostiempos = LosTiempos(start_date, end_date)
-        news_data_lostiempos  = lostiempos.scrape_news()
-        
-        el_deber = ElDeber(start_date, end_date)
-        news_data_el_deber = el_deber.obtener_todas_las_noticias()
-        
-        opinion = Opinion(start_date, end_date)
-        news_data_opinion = opinion.obtener_noticias_por_rango()
-        
-        news_data = np.concatenate((news_data_el_deber, news_data_lostiempos, news_data_opinion))
+        news_data = []
+
+        # Verificar qué fuentes están seleccionadas
+        if los_tiempos_var.get():
+            lostiempos = LosTiempos(start_date, end_date)
+            news_data_lostiempos = lostiempos.scrape_news()
+            news_data.extend(news_data_lostiempos)
+
+        if el_deber_var.get():
+            el_deber = ElDeber(start_date, end_date)
+            news_data_el_deber = el_deber.obtener_todas_las_noticias()
+            news_data.extend(news_data_el_deber)
+
+        if opinion_var.get():
+            opinion = Opinion(start_date, end_date)
+            news_data_opinion = opinion.obtener_noticias_por_rango()
+            news_data.extend(news_data_opinion)
+
+        if not news_data:
+            messagebox.showwarning("Advertencia", "No se seleccionó ninguna fuente de noticias.")
+            return
 
         # Guardar los resultados en CSV
         save_to_csv(news_data)
@@ -60,6 +70,16 @@ start_date_entry.pack()
 tk.Label(root, text="Fecha de fin (DD/MM/YYYY):").pack()
 end_date_entry = tk.Entry(root)
 end_date_entry.pack()
+
+# Variables para los checkbuttons
+los_tiempos_var = tk.BooleanVar(value=True)  # Por defecto seleccionado
+el_deber_var = tk.BooleanVar(value=True)      # Por defecto seleccionado
+opinion_var = tk.BooleanVar(value=True)       # Por defecto seleccionado
+
+# Checkbuttons para seleccionar fuentes
+tk.Checkbutton(root, text="Los Tiempos", variable=los_tiempos_var).pack()
+tk.Checkbutton(root, text="El Deber", variable=el_deber_var).pack()
+tk.Checkbutton(root, text="Opinión", variable=opinion_var).pack()
 
 # Botón para iniciar el scraping
 tk.Button(root, text="Iniciar Scraping", command=start_scraping).pack()
