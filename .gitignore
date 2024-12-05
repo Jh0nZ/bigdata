@@ -1,3 +1,5 @@
 venv
 *.tar.gz
 hadoop
+metastore_db
+*.log
