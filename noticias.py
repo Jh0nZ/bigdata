@@ -2,12 +2,15 @@ import csv
 import tkinter as tk
 from tkinter import messagebox
 from datetime import datetime
-from Lostiempos import Lostiempos
+from LosTiempos import LosTiempos
+from ElDeber import ElDeber
+from Opinion import Opinion
+import numpy as np
 
 def save_to_csv(news_data):
     # Guardar las noticias en un archivo CSV
     with open("noticias.csv", mode="w", newline="", encoding="utf-8") as csv_file:
-        fieldnames = ["fecha", "titulo", "sumario", "enlace"]
+        fieldnames = ["fecha", "titulo", "sumario", "enlace", "fuente"]
         writer = csv.writer(csv_file)
 
         # Escribir la cabecera del CSV
@@ -28,8 +31,16 @@ def start_scraping():
             return
 
         # Crear instancia de Lostiempos y obtener las noticias
-        lostiempos = Lostiempos(start_date, end_date)
-        news_data = lostiempos.scrape_news()
+        lostiempos = LosTiempos(start_date, end_date)
+        news_data_lostiempos  = lostiempos.scrape_news()
+        
+        el_deber = ElDeber(start_date, end_date)
+        news_data_el_deber = el_deber.obtener_todas_las_noticias()
+        
+        opinion = Opinion(start_date, end_date)
+        news_data_opinion = opinion.obtener_noticias_por_rango()
+        
+        news_data = np.concatenate((news_data_el_deber, news_data_lostiempos, news_data_opinion))
 
         # Guardar los resultados en CSV
         save_to_csv(news_data)

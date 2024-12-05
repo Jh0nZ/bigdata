@@ -3,13 +3,14 @@ from bs4 import BeautifulSoup
 import numpy as np
 from datetime import timedelta
 
-class Lostiempos:
+class LosTiempos:
     def __init__(self, start_date, end_date):
         self.start_date = start_date
         self.end_date = end_date
         self.base_url = "https://www.lostiempos.com/hemeroteca-fecha?fecha={}&page="
 
     def scrape_news(self):
+        print(f"Obteniendo noticias de Los Tiempos desde {self.start_date.strftime('%d/%m/%Y')} hasta {self.end_date.strftime('%d/%m/%Y')}")
         news_data = []
 
         current_date = self.start_date
@@ -29,7 +30,7 @@ class Lostiempos:
 
                 # Si no hay noticias, salir del bucle
                 if soup.select_one(".view-empty") or not noticias:
-                    print(f"Ya no existen noticias para la fecha {formatted_date}.")
+                    print(f"Ya no existen noticias para la fecha {current_date.strftime("%m/%d/%Y")} los tiempos.")
                     break
 
                 for noticia in noticias:
@@ -44,6 +45,7 @@ class Lostiempos:
                                 titulo.text.strip(),
                                 sumario.text.strip() if sumario else "",
                                 f"https://www.lostiempos.com{titulo['href']}",
+                                "lostiempos"
                             ]
                         )
 
