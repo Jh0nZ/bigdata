@@ -1,56 +1,90 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime, timedelta
 
-# URL base de la página a scrapear
-base_url = "https://www.lostiempos.com/hemeroteca-fecha?fecha=15/04/2024&page="
+def scrape_news(start_date, end_date):
+    base_url = "https://www.lostiempos.com/hemeroteca-fecha?fecha={}&page="
+    
+    # Abrir el archivo CSV para escribir
+    with open("lostiempos.csv", mode="w", newline="", encoding="utf-8") as csv_file:
+        fieldnames = ["Fecha", "Título", "Sumario", "Enlace"]
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
-#21/04/2016 fecha prohibida
+        # Escribir la cabecera del CSV
+        writer.writeheader()
 
-# Abrir el archivo CSV para escribir
-with open("noticias.csv", mode="w", newline="", encoding="utf-8") as csv_file:
-    fieldnames = ["Fecha", "Título", "Sumario", "Enlace"]
-    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        current_date = start_date
+        while current_date <= end_date:
+            formatted_date = current_date.strftime("%m/%d/%Y").replace("/", "%2F")
+            page = 0
+            while True:
+                # Construir la URL para la página actual
+                url = base_url.format(formatted_date) + str(page)
 
-    # Escribir la cabecera del CSV
-    writer.writeheader()
+                # Obtener el contenido de la página
+                response = requests.get(url)
+                soup = BeautifulSoup(response.content, "html.parser")
 
-    page = 0
-    while True:
-        # Construir la URL para la página actual
-        url = f"{base_url}{page}"
+                # Encontrar todas las noticias en la estructura que mencionaste
+                noticias = soup.select(".noticia-lt")
 
-        # Obtener el contenido de la página
-        response = requests.get(url)
-        soup = BeautifulSoup(response.content, "html.parser")
+                # Si no hay noticias, salir del bucle
+                if soup.select_one(".view-empty") or not noticias:
+                    print(f"Ya no existen noticias para la fecha {formatted_date}.")
+                    break
 
-        # Encontrar todas las noticias en la estructura que mencionaste
-        noticias = soup.select(".noticia-lt")
+                for noticia in noticias:
+                    fecha = noticia.select_one(".date-display-single")
+                    titulo = noticia.select_one(".views-field-title a")
+                    sumario = noticia.select_one(".views-field-field-noticia-sumario")
+                    # Si se encuentra la fecha y el título, guarda la información en el CSV
+                    if fecha and titulo:
+                        writer.writerow(
+                            {
+                                "Fecha": fecha.text.strip(),
+                                "Título": titulo.text.strip(),
+                                "Sumario": sumario.text.strip() if sumario else "",
+                                "Enlace": f"https://www.lostiempos.com{titulo['href']}",
+                            }
+                        )
 
-        # Si no hay noticias, salir del bucle
-        # Verificar si no hay noticias
+                # Incrementar el número de página
+                page += 1
 
-        if soup.select_one(".view-empty") or soup.select_one(".views-field-title"):
-            print("No existen noticias para esta fecha. Saliendo del bucle.")
-            break
+            # Avanzar al siguiente día
+            current_date += timedelta(days=1)
 
-        for noticia in noticias:
-            fecha = noticia.select_one(".date-display-single")
-            titulo = noticia.select_one(".views-field-title a")
-            sumario = noticia.select_one(".views-field-field-noticia-sumario")
+    messagebox.showinfo("Éxito", "Los datos han sido guardados en 'lostiempos.csv'.")
 
-            # Si se encuentra la fecha y el título, guarda la información en el CSV
-            if fecha and titulo:
-                writer.writerow(
-                    {
-                        "fecha": fecha.text.strip(),
-                        "titulo": titulo.text.strip(),
-                        "sumario": sumario.text.strip() if sumario else "",
-                        "enlace": f"https://www.lostiempos.com{titulo['href']}",
-                    }
-                )
+def start_scraping():
+    try:
+        start_date = datetime.strptime(start_date_entry.get(), "%d/%m/%Y")
+        end_date = datetime.strptime(end_date_entry.get(), "%d/%m/%Y")
+        if start_date > end_date:
+            messagebox.showerror("Error", "La fecha de inicio no puede ser mayor que la fecha de fin.")
+            return
+        scrape_news(start_date, end_date)
+    except ValueError:
+        messagebox.showerror("Error", "Formato de fecha inválido. Usa DD/MM/YYYY.")
 
-        # Incrementar el número de página
-        page += 1
+# Crear la ventana principal
+root = tk.Tk()
+root.title("Scraper de Noticias")
 
-print("Los datos han sido guardados en 'noticias2.csv'.")
+# Etiquetas y campos de entrada
+tk.Label(root, text="Fecha de inicio (DD/MM/YYYY):").pack()
+start_date_entry = tk.Entry(root)
+start_date_entry.pack()
+
+tk.Label(root, text="Fecha de fin (DD/MM/YYYY):").pack()
+end_date_entry = tk.Entry(root)
+end_date_entry.pack()
+
+# Botón para iniciar el scraping
+tk.Button(root, text="Iniciar Scraping", command=start_scraping).pack()
+
+# Ejecutar la aplicación
+root.mainloop()
