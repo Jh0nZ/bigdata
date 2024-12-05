@@ -5,7 +5,7 @@ from pyspark.sql import functions as F
 spark = SparkSession.builder.appName("TarifaMasBaja").getOrCreate()
 
 # Cargar el archivo CSV en un DataFrame
-df = spark.read.csv("hdfs:///ruta/destino/tarifas.csv", header=True, inferSchema=True)
+df = spark.read.csv("hdfs:///datos/tarifas.csv", header=True, inferSchema=True)
 
 # Filtrar por tipo de conexión y departamento (ciudad)
 tipo_conexion = "FIBRA"  # Cambia según lo que necesites

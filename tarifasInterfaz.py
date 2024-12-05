@@ -7,7 +7,7 @@ from pyspark.sql import functions as F
 spark = SparkSession.builder.appName("TarifaMasBaja").getOrCreate()
 
 # Cargar el archivo CSV en un DataFrame
-df = spark.read.csv("hdfs:///ruta/destino/tarifas.csv", header=True, inferSchema=True)
+df = spark.read.csv("hdfs:///datos/tarifas.csv", header=True, inferSchema=True)
 
 # Obtener los departamentos y tipos de conexión únicos
 departamentos = df.select("Departamento").distinct().rdd.flatMap(lambda x: x).collect()
@@ -25,13 +25,15 @@ def mostrar_tarifa():
         .groupBy("Departamento", "Tipo de Conexión")
         .agg(
             F.min("Precio (Bs)").alias("Precio Minimo"),
+            F.first("Operador").alias("Operador"),
+            F.first("Velocidad Bajada (Mbps)").alias("velocidad_bajada"),
         )
     )
     
     resultado = tarifa_minima.collect()
     
     if resultado:
-        label_resultado.config(text=f"Precio Mínimo en {ciudad} ({tipo_conexion}): {resultado[0]['Precio Minimo']} Bs")
+        label_resultado.config(text=f"Precio Mínimo en {ciudad} ({tipo_conexion}): {resultado[0]['Precio Minimo']} Bs, Operador: {resultado[0]['Operador']}, Velocidad de Bajada: {resultado[0]['velocidad_bajada']} Mbps.")
     else:
         label_resultado.config(text="No se encontraron tarifas.")
 

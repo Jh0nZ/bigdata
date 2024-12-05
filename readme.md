@@ -7,6 +7,10 @@ start-yarn.sh
 ```
 
 ```bash
-hadoop fs -mkdir -p /ruta/destino
+hadoop fs -mkdir -p /datos
+```
+
+```bash
+hdfs dfs -put /a/archivo /datos/
 ```
 
