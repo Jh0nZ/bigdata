@@ -8,7 +8,8 @@ def scrap_tarifas(url):
     soup = BeautifulSoup(response.content, "html.parser")
 
     # Buscar el script que contiene "dataJSONArray"
-    script_tag = soup.find("script", text=lambda t: t and "dataJSONArray" in t)
+    script_tag = soup.find("script", string=lambda s: s and "dataJSONArray" in s)
+
     if not script_tag:
         print("No se encontró la variable JSON en los scripts.")
         return []
@@ -29,7 +30,6 @@ def scrap_tarifas(url):
 
     return data
 
-
 def guardar_como_csv(data, filename="data/tarifas.csv"):
     if not data:
         print("No hay datos para guardar.")
@@ -45,7 +45,6 @@ def guardar_como_csv(data, filename="data/tarifas.csv"):
         writer.writerows(data)
 
     print(f"Datos guardados en {filename}")
-
 
 if __name__ == "__main__":
     url = "https://tarifas.att.gob.bo/index.php/tarifaspizarra/tarifasInternetFijo"
