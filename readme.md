@@ -11,6 +11,10 @@ hadoop fs -mkdir -p /datos
 ```
 
 ```bash
-hdfs dfs -put /a/archivo /datos/
+hdfs dfs -put -f /a/archivo /datos/
+```
+
+```bash
+hdfs dfs -ls /
 ```
 
