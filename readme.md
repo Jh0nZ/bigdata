@@ -31,3 +31,7 @@ hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
 ```bash
 hadoop fs -cat /user/jhon/resultado/part-00000
 ```
+
+```bash
+hadoop fs -rm -r /user/jhon/resultado
+```
