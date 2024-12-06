@@ -1,88 +1,34 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, explode, split, lower, count
-from pyspark.sql import functions as F
+from pyspark.sql.functions import col, explode, split, lower, count, to_date, concat_ws
+from pyspark.sql.types import StringType, DateType
 
-# Crear una sesión de Spark
-spark = SparkSession.builder.appName("Obtener noticia más importante").getOrCreate()
+# Crear sesión de Spark
+spark = SparkSession.builder.appName("NoticiasImportantes").getOrCreate()
 
-# Cargar el archivo CSV
-df = spark.read.csv(
-    "hdfs:///datos/lostiempos.csv", header=True, inferSchema=True
-)
+# Cargar el archivo CSV desde HDFS
+df = spark.read.option("header", "true").csv("hdfs:///datos/noticias.csv")
 
-# Mostrar el esquema del DataFrame
-df.printSchema()
+df = df.withColumn("fecha", to_date(col("fecha"), "dd/MM/yyyy"))
+# Asegurar que el campo 'fecha' sea del tipo DateType
+df = df.withColumn("fecha", col("fecha").cast(DateType()))
 
-# Función para obtener la noticia más importante de una fecha específica
-def obtener_noticia_mas_importante(fecha):
-    # Filtrar por la fecha dada
-    noticia_fecha = df.filter(col("Fecha") == fecha)
-    # Unir el título y el sumario en una sola columna para el análisis
-    noticia_fecha = noticia_fecha.withColumn(
-        "texto_completo", F.concat_ws(" ", col("Título"), col("Sumario"))
-    )
-    # Dividir el texto en palabras, convertir a minúsculas y contar la frecuencia de cada palabra
-    palabras = noticia_fecha.select(
-        explode(split(lower(col("texto_completo")), " ")).alias("palabra")
-    )
-    # Contar la frecuencia de cada palabra
-    frecuencia_palabras = palabras.groupBy("palabra").agg(
-        count("palabra").alias("frecuencia")
-    )
-    # Obtener las palabras más frecuentes
-    palabras_frecuentes = frecuencia_palabras.orderBy(desc("frecuencia")).limit(
-        10
-    )  # Cambia el límite según sea necesario
-    # Recoger las palabras más frecuentes en una lista
-    palabras_frecuentes_list = [row["palabra"] for row in palabras_frecuentes.collect()]
-    # Filtrar las noticias que contienen la mayor cantidad de palabras frecuentes
-    def contar_palabras_frecuentes(texto):
-        return sum(
-            1 for palabra in palabras_frecuentes_list if palabra in texto.lower()
-        )
-    contar_palabras_frecuentes_udf = F.udf(contar_palabras_frecuentes)
-    # Añadir una columna con el conteo de palabras frecuentes
-    noticia_fecha = noticia_fecha.withColumn(
-        "conteo_palabras_frecuentes",
-        contar_palabras_frecuentes_udf(col("texto_completo")),
-    )
+# Filtrar por el rango de fechas deseado
+fecha_inicio = "2024-12-01"
+fecha_fin = "2024-12-03"
+df_filtrado = df.filter((col("fecha") >= fecha_inicio) & (col("fecha") <= fecha_fin))
 
-    # Obtener la noticia con el mayor conteo de palabras frecuentes
+# Combinar el título y el sumario en una sola columna
+df_combined = df_filtrado.withColumn("texto_completo", concat_ws(" ", col("titulo"), col("sumario")))
 
-    noticia_mas_importante = noticia_fecha.orderBy(
-        desc("conteo_palabras_frecuentes")
-    ).first()
+# Dividir el texto en palabras, convertir a minúsculas y contar la frecuencia
+df_palabras = df_combined.select(explode(split(lower(col("texto_completo")), " ")).alias("palabra"))
 
-    return noticia_mas_importante
+# Contar la frecuencia de cada palabra
+df_frecuencia = df_palabras.groupBy("palabra").agg(count("*").alias("frecuencia"))
 
+# Encontrar la palabra más común
+df_mas_comun = df_frecuencia.orderBy(col("frecuencia").desc()).limit(1)
 
-# Fecha de ejemplo
-
-fecha_buscada = "25/11/2024"
-
-
-# Obtener la noticia más importante
-
-noticia = obtener_noticia_mas_importante(fecha_buscada)
-
-
-# Mostrar la noticia más importante
-
-if noticia:
-
-    print(f"Fecha: {noticia['Fecha']}")
-
-    print(f"Título: {noticia['Título']}")
-
-    print(f"Sumario: {noticia['Sumario']}")
-
-    print(f"Enlace: {noticia['Enlace']}")
-
-else:
-
-    print("No se encontró ninguna noticia para la fecha dada.")
-
-
-# Detener la sesión de Spark
-
-spark.stop()
+# Mostrar la palabra más común
+print("Palabra más común:")
+df_mas_comun.show() 

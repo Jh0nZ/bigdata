@@ -34,7 +34,7 @@ class Opinion:
                     titulo = article.find('h2', class_='title').get_text(strip=True)
                     sumario = article.find('div', class_='summary').get_text(strip=True)
                     enlace_completo = f"https://www.opinion.com.bo{article.find('a')['href']}"
-                    noticias.append([fecha.strftime("%d-%m-%Y"), titulo, sumario, enlace_completo, "opinion"])
+                    noticias.append([fecha.strftime("%d/%m/%Y"), titulo, sumario, enlace_completo, "opinion"])
                 pagina += 1
             else:
                 print(f"Error al acceder al sitio web. Código de estado: {response.status_code}.")
