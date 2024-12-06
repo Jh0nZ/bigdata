@@ -35,3 +35,23 @@ hadoop fs -cat /user/jhon/resultado/part-00000
 ```bash
 hadoop fs -rm -r /user/jhon/resultado
 ```
+
+# conteo de palabras
+```bash
+hadoop fs -rm -r /user/jhon/resultado_palabras
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
+-input /datos/pg74840.txt \
+-output /user/jhon/resultado_palabras \
+-mapper "python3 mapper.py" \
+-reducer "python3 reducer.py" \
+-file palabras/mapper.py \
+-file palabras/reducer.py
+```
+
+```bash
+hdfs dfs -put -f palabras/mapper.py palabras/reducer.py /user/jhon/scripts/
+```
+
+```bash
+hadoop fs -cat /user/jhon/resultado_palabras/part-00000
+```
