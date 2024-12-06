@@ -55,3 +55,23 @@ hdfs dfs -put -f palabras/mapper.py palabras/reducer.py /user/jhon/scripts/
 ```bash
 hadoop fs -cat /user/jhon/resultado_palabras/part-00000
 ```
+
+# tarifas
+```bash
+hadoop fs -rm -r /user/jhon/resultado_tarifas
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
+-input /datos/tarifas.csv \
+-output /user/jhon/resultado_tarifas \
+-mapper "python3 mapper.py" \
+-reducer "python3 reducer.py" \
+-file tarifas/mapper.py \
+-file tarifas/reducer.py
+```
+
+```bash
+hdfs dfs -put -f tarifas/mapper.py tarifas/reducer.py /user/jhon/scripts/
+```
+
+```bash
+hadoop fs -cat /user/jhon/resultado_tarifas/part-00000
+```
