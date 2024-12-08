@@ -75,3 +75,9 @@ hdfs dfs -put -f tarifas/mapper.py tarifas/reducer.py /user/jhon/scripts/
 ```bash
 hadoop fs -cat /user/jhon/resultado_tarifas/part-00000
 ```
+
+# pig
+
+```bash
+mr-jobhistory-daemon.sh start historyserver
+```

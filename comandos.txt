@@ -1,0 +1,62 @@
+--comandos pig
+
+transacciones = LOAD 'hdfs:///datos/transacciones.csv' 
+USING PigStorage(',') 
+AS (id_transaccion:int, 
+    producto:chararray, 
+    categoria:chararray, 
+    cantidad:int, 
+    precio_unitario:chararray, 
+    Subtotal:chararray, 
+    fecha:chararray);
+
+DUMP transacciones;
+
+transacciones_converted = FOREACH transacciones GENERATE 
+    id_transaccion, 
+    producto, 
+    categoria, 
+    cantidad, 
+    (double)REPLACE(REPLACE(precio_unitario, '.', ''), ',', '.') AS precio_unitario, 
+    (double)REPLACE(REPLACE(Subtotal, '.', ''), ',', '.') AS Subtotal, 
+    fecha;
+
+DUMP transacciones_converted;
+
+STORE data_converted INTO 'transacciones_procesadas' USING org.apache.hive.hcatalog.pig.HCatStorer();
+
+-- comandos hive
+
+CREATE TABLE transacciones_procesadas (
+    id_transaccion INT,
+    producto STRING,
+    categoria STRING,
+    cantidad INT,
+    precio_unitario STRING,
+    Subtotal STRING,
+    fecha STRING
+)
+STORED AS TEXTFILE;
+
+SELECT AVG(precio_unitario) AS precio_promedio_unitario
+FROM transacciones_procesadas
+WHERE categoria = 'Muebles';
+
+SELECT 
+    (COUNT(CASE WHEN categoria = 'Ropa' THEN 1 END) / COUNT(*)) * 100 AS porcentaje_rope
+FROM transacciones_procesadas;
+
+SELECT SUM(cantidad * precio_unitario) AS total_ingresos_electronica
+FROM transacciones_procesadas
+WHERE categoria = 'Electrónica';
+
+SELECT COUNT(*) AS transacciones_ropa
+FROM transacciones_procesadas
+WHERE categoria = 'Ropa';
+
+SELECT producto, SUM(cantidad) AS total_cantidad
+FROM transacciones_procesadas
+GROUP BY producto
+ORDER BY total_cantidad DESC
+LIMIT 1;
+
